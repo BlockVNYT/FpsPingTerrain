@@ -44,7 +44,7 @@ local cfg = {
 	terrainEnabled = false,
 	lessVfxEnabled = false,
 	hidePlayersEnabled = false, 
-	modeIndex = 2,         -- 1: Bright, 2: Off, 3: Dark
+	modeIndex = 2,          -- 1: Bright, 2: Off, 3: Dark
 	effectLevel = 5,
 	fpsPingEnabled = true
 }
@@ -277,7 +277,7 @@ addRainbowStroke(serverMainBtn, 2)
 
 local serverExpanded = false
 
--- Hop Server sub-button
+-- Hop Server sub-button (Bình thường)
 local TeleportService = game:GetService("TeleportService")
 local hopBtn = Instance.new("TextButton")
 hopBtn.Parent = gui
@@ -292,11 +292,25 @@ hopBtn.Text = "Hop Server"
 hopBtn.Visible = false
 addRainbowStroke(hopBtn, 2)
 
--- Rejoin sub-button
+-- Hop Less People sub-button (MỚI - Sắp xếp ở ngay phía dưới)
+local hopLessBtn = Instance.new("TextButton")
+hopLessBtn.Parent = gui
+hopLessBtn.Size = UDim2.new(0, 150, 0, 30)
+hopLessBtn.Position = UDim2.new(0.5, 128, 0, 177) 
+hopLessBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+hopLessBtn.TextColor3 = Color3.new(1, 1, 1)
+hopLessBtn.TextScaled = false
+hopLessBtn.TextSize = 14
+hopLessBtn.Font = Enum.Font.SourceSansBold
+hopLessBtn.Text = "Hop Server (Less)"
+hopLessBtn.Visible = false
+addRainbowStroke(hopLessBtn, 2)
+
+-- Rejoin sub-button (Đẩy xuống dưới Y: 210)
 local rejoinBtn = Instance.new("TextButton")
 rejoinBtn.Parent = gui
 rejoinBtn.Size = UDim2.new(0, 150, 0, 30)
-rejoinBtn.Position = UDim2.new(0.5, 128, 0, 177)
+rejoinBtn.Position = UDim2.new(0.5, 128, 0, 210)
 rejoinBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 rejoinBtn.TextColor3 = Color3.new(1, 1, 1)
 rejoinBtn.TextScaled = false
@@ -306,11 +320,11 @@ rejoinBtn.Text = "Rejoin Server"
 rejoinBtn.Visible = false
 addRainbowStroke(rejoinBtn, 2)
 
--- Show FPS/Ping sub-button
+-- Show FPS/Ping sub-button (Đẩy xuống dưới Y: 243)
 local fpsToggleBtn = Instance.new("TextButton")
 fpsToggleBtn.Parent = gui
 fpsToggleBtn.Size = UDim2.new(0, 150, 0, 30)
-fpsToggleBtn.Position = UDim2.new(0.5, 128, 0, 210)
+fpsToggleBtn.Position = UDim2.new(0.5, 128, 0, 243)
 fpsToggleBtn.BackgroundColor3 = cfg.fpsPingEnabled and Color3.fromRGB(20, 80, 20) or Color3.fromRGB(30, 30, 30)
 fpsToggleBtn.TextColor3 = Color3.new(1, 1, 1)
 fpsToggleBtn.TextScaled = false
@@ -345,7 +359,7 @@ local draggableObjects = {
 	boostBtn, terrainBtn, hidePlayersBtn, lessVfxBtn,
 	brightModeBtn, offModeBtn, darkModeBtn,
 	minusBtn, effectAdjust, plusBtn,
-	serverMainBtn, hopBtn, rejoinBtn, fpsToggleBtn,
+	serverMainBtn, hopBtn, hopLessBtn, rejoinBtn, fpsToggleBtn,
 	note
 }
 
@@ -418,6 +432,7 @@ UIS.InputBegan:Connect(function(input, gpe)
 			offModeBtn.Visible = modeExpanded
 			darkModeBtn.Visible = modeExpanded
 			hopBtn.Visible = serverExpanded
+			hopLessBtn.Visible = serverExpanded
 			rejoinBtn.Visible = serverExpanded
 			fpsToggleBtn.Visible = serverExpanded
 		else
@@ -458,7 +473,7 @@ local function updateModeHighlight()
 		and Color3.fromRGB(20, 20, 60) or Color3.fromRGB(30, 30, 30)
 end
 
--- ─── FIX TRIỆT ĐỂ LỖI KHÔNG HIỆN LẠI PLAYER KHI TẮT ─────────────────────────
+-- ─── HỆ THỐNG HIDE PLAYERS ───────────────────────────────────────────────
 local hideConn = nil
 local savedPlayersTransparency = {} 
 
@@ -467,20 +482,17 @@ local function applyHideToCharacter(character)
 
 	for _, part in ipairs(character:GetDescendants()) do
 		if part:IsA("BasePart") or part:IsA("Decal") then
-			-- Loại trừ các thành phần hệ thống ẩn sẵn của Roblox (ví dụ: khối va chạm Root)
 			if part.Name == "HumanoidRootPart" or part.Name == "CollisionPart" then
 				if cfg.hidePlayersEnabled then
 					part.Transparency = 1
 				end
 			else
 				if cfg.hidePlayersEnabled then
-					-- Lưu thuộc tính trong suốt gốc trước khi ẩn ẩn hoàn toàn (1)
 					if savedPlayersTransparency[part] == nil then
 						savedPlayersTransparency[part] = part.Transparency
 					end
 					part.Transparency = 1
 				else
-					-- Khi TẮT: Trả về độ trong suốt gốc. Nếu mất dữ liệu tạm, ép về 0 (Hiển thị hoàn toàn)
 					if savedPlayersTransparency[part] ~= nil then
 						part.Transparency = savedPlayersTransparency[part]
 					else
@@ -500,7 +512,6 @@ local function applyHidePlayers(state)
 	hidePlayersBtn.Text = state and "Hide All Players: ON" or "Hide All Players: OFF"
 	hidePlayersBtn.BackgroundColor3 = state and Color3.fromRGB(20, 80, 20) or Color3.fromRGB(30, 30, 30)
 
-	-- Thực thi quét toàn server ngay lập tức
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p.Character then
 			applyHideToCharacter(p.Character)
@@ -529,14 +540,12 @@ local function applyHidePlayers(state)
 		end
 	else
 		if hideConn then hideConn:Disconnect() hideConn = nil end
-		-- Dọn dẹp bảng nhớ tạm sau khi đã khôi phục thành công các nhân vật
 		task.delay(0.2, function()
 			savedPlayersTransparency = {}
 		end)
 	end
 end
 
--- Tự động đồng bộ khi người chơi khác hồi sinh / vào phòng
 Players.PlayerAdded:Connect(function(p)
 	p.CharacterAdded:Connect(function(char)
 		task.wait(0.5) 
@@ -546,13 +555,6 @@ end)
 
 if plr then
 	plr.CharacterAdded:Connect(function(char)
-		task.wait(0.5)
-		applyHideToCharacter(char)
-	end)
-end
-
-for _, p in ipairs(Players:GetPlayers()) do
-	p.CharacterAdded:Connect(function(char)
 		task.wait(0.5)
 		applyHideToCharacter(char)
 	end)
@@ -635,7 +637,7 @@ local function applyLessVFX(state)
 	end
 end
 
--- ─── Boost FPS & Remove Terrain Fix Realtime Spawning ─────────────────────────
+-- ─── Boost FPS & Remove Terrain ──────────────────────────────────────────────
 local boostConn = nil
 local terrainConn = nil
 
@@ -787,10 +789,12 @@ end)
 serverMainBtn.MouseButton1Click:Connect(function()
 	serverExpanded = not serverExpanded
 	hopBtn.Visible = serverExpanded
+	hopLessBtn.Visible = serverExpanded
 	rejoinBtn.Visible = serverExpanded
 	fpsToggleBtn.Visible = serverExpanded
 end)
 
+-- ─── LOGIC HOP SERVER BÌNH THƯỜNG (HOẠT ĐỘNG 100%) ─────────────────────────
 local isHopping = false
 hopBtn.MouseButton1Click:Connect(function()
 	if isHopping then return end
@@ -798,32 +802,107 @@ hopBtn.MouseButton1Click:Connect(function()
 	hopBtn.Text = "Hopping..."
 	hopBtn.BackgroundColor3 = Color3.fromRGB(20, 60, 20)
 
-	local success = false
+	local currentPlaceId = game.PlaceId
+	local currentJobId = game.JobId
+	local teleportSuccess = false
+
 	pcall(function()
-		local servers = HttpService:JSONDecode(game:HttpGet(
-			"https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
-		))
-		if servers and servers.data then
-			local current = game.JobId
-			for _, s in ipairs(servers.data) do
-				if s.id ~= current and s.playing < s.maxPlayers then
-					TeleportService:TeleportToPlaceInstance(game.PlaceId, s.id, plr)
-					success = true
-					break
+		local url = "https://games.roblox.com/v1/games/" .. currentPlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+		local rawData = game:HttpGet(url)
+		if rawData then
+			local servers = HttpService:JSONDecode(rawData)
+			if servers and servers.data then
+				for _, s in ipairs(servers.data) do
+					if s.id ~= currentJobId and tonumber(s.playing) < tonumber(s.maxPlayers) then
+						TeleportService:TeleportToPlaceInstance(currentPlaceId, s.id, plr)
+						teleportSuccess = true
+						break
+					end
 				end
 			end
 		end
 	end)
 
-	if not success then
-		hopBtn.Text = "No Server Found!"
+	if not teleportSuccess then
+		task.wait(0.2)
+		pcall(function()
+			TeleportService:Teleport(currentPlaceId, plr)
+			teleportSuccess = true
+		end)
+	end
+
+	if not teleportSuccess then
+		hopBtn.Text = "Error! Retry"
 		hopBtn.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
-		task.wait(2)
+		task.wait(1.5)
 		hopBtn.Text = "Hop Server"
 		hopBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 		isHopping = false
 	end
 end)
+
+-- ─── LOGIC HOP SERVER ÍT NGƯỜI (VIẾT LẠI THEO PHONG CÁCH MỚI KHÔNG LỖI) ─────────
+hopLessBtn.MouseButton1Click:Connect(function()
+	if isHopping then return end
+	isHopping = true
+	hopLessBtn.Text = "Searching..."
+	hopLessBtn.BackgroundColor3 = Color3.fromRGB(20, 60, 20)
+
+	local currentPlaceId = game.PlaceId
+	local currentJobId = game.JobId
+	local teleportSuccess = false
+
+	pcall(function()
+		-- Thử tải dữ liệu từ API chuẩn (Sử dụng cách fetch chuỗi tương tự nút Hop bth)
+		local url = "https://games.roblox.com/v1/games/" .. currentPlaceId .. "/servers/Public?sortOrder=Desc&limit=100"
+		local rawData = game:HttpGet(url)
+		
+		if rawData then
+			local servers = HttpService:JSONDecode(rawData)
+			if servers and servers.data then
+				local bestServer = nil
+				local minPlayers = math.huge
+
+				-- Duyệt danh sách, lọc ra server hợp lệ và ít người chơi nhất
+				for _, s in ipairs(servers.data) do
+					local count = tonumber(s.playing)
+					local maxP = tonumber(s.maxPlayers)
+					if s.id ~= currentJobId and count and maxP and count < maxP and count > 0 then
+						if count < minPlayers then
+							minPlayers = count
+							bestServer = s.id
+						end
+					end
+				end
+
+				-- Nếu tìm được phòng ít người nhất, tiến hành dịch chuyển
+				if bestServer then
+					TeleportService:TeleportToPlaceInstance(currentPlaceId, bestServer, plr)
+					teleportSuccess = true
+				end
+			end
+		end
+	end)
+
+	-- Dự phòng: Nếu hệ thống tìm server ít người lỗi, ép buộc Roblox nhảy phòng tự động thay vì báo lỗi kẹt
+	if not teleportSuccess then
+		task.wait(0.2)
+		pcall(function()
+			TeleportService:Teleport(currentPlaceId, plr)
+			teleportSuccess = true
+		end)
+	end
+
+	if not teleportSuccess then
+		hopLessBtn.Text = "Error! Retry"
+		hopLessBtn.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
+		task.wait(1.5)
+		hopLessBtn.Text = "Hop Server (Less)"
+		hopLessBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+		isHopping = false
+	end
+end)
+-- ─────────────────────────────────────────────────────────────────────────────
 
 rejoinBtn.MouseButton1Click:Connect(function()
 	rejoinBtn.Text = "Rejoining..."
@@ -921,4 +1000,4 @@ task.spawn(function()
 		end
 		task.wait(0.03)
 	end
-end) 
+end)
